@@ -15,9 +15,14 @@
 
 set -eo # Stop at first error (o catches piped errors)
 
-url="https://distfiles.gentoo.org/releases/amd64/autobuilds/"
-txtfile="latest-stage3-amd64-desktop-systemd.txt"
+distro="decibel Linux"
 email="webmaster@gentoostudio.org"
+arch=amd64
+stage3_suffx="desktop-systemd"
+stage4_name="decibellinux-stage4.tar.bz2"
+
+url="https://distfiles.gentoo.org/releases/${arch}/autobuilds/"
+txtfile="latest-stage3-${arch}-${stage3_suffx}.txt"
 builddir="/var/tmp/stagebuilder" # Do not use trailing slash here.
 seedname="stage3seed.tar.xz"
 
@@ -129,8 +134,8 @@ unmount_all
 cd $builddir/stage4
 echo "Packing up stage4... Please be patient."
 rm $builddir/stage4/chroot_autobuild.sh
-tar -cjf $builddir/decibellinux-stage4.tar.bz2 --exclude='/run/*' --exclude='/dev/*' --exclude='/sys/*' --exclude='/proc/*' .
+tar -cjf $builddir/${stage4_name} --exclude='/run/*' --exclude='/dev/*' --exclude='/sys/*' --exclude='/proc/*' .
 cleanup
 
 end_time=$(date)
-create_mailmsg "decibel Linux build complete" "The latest build was completed at $end_time."
+create_mailmsg "${distro} build complete" "The latest build was completed at $end_time."
