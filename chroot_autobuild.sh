@@ -180,33 +180,6 @@ xfce-base/xfce4-power-manager
 
 # Need code to generate list of default installed apps based on above list.
 
-# Config kernel
-# Kernel has to be genkernelled now to generate a .config. Make bzImage only to save time.
-eselect kernel set 1
-genkernel bzImage
-# Fully premptible kernel. Expert is required to select full RT
-sed -i 's/# CONFIG_EXPERT is not set/CONFIG_EXPERT=y/' /usr/src/linux/.config
-sed -i 's/CONFIG_PREEMPT_BUILD=y/CONFIG_PREEMPT_LAZY=y/' /usr/src/linux/.config
-sed -i 's/CONFIG_PREEMPT_VOLUNTARY=y/CONFIG_PREEMPT_RT=y/' /usr/src/linux/.config
-sed -i 's/CONFIG_PREEMPT_DYNAMIC=y/# CONFIG_PREEMPT_DYNAMIC=y/' /usr/src/linux/.config
-# Speculation mitigations security intereferes with real-time operations
-sed -i 's/CONFIG_SPECULATION_MITIGATIONS=y/# CONFIG_SPECULATION_MITIGATIONS is not set/' /usr/src/linux/.config
-# Default CPU freq should be performance
-sed -i 's/# CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE is not set/CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE=y/' /usr/src/linux/.config
-sed -i 's/CONFIG_CPU_FREQ_DEFAULT_GOV_SCHEDUTIL=y/# CONFIG_CPU_FREQ_DEFAULT_GOV_SCHEDUTIL is not set/' /usr/src/linux/.config
-# Save a cp of the config for safekeeping.
-cp /usr/src/linux/.config /usr/src/linux/.config_full_preempt
-# Now run genkernel again to make this take effect.
-# genkernel will run a silent make oldconfig, accepting the default changes relevant to config_preempt.
-genkernel --kernel-config=/usr/src/linux/.config_full_preempt all
-# Get rid of old kernels from previous build runs
-rm /boot/*.old
-
-### Enable default services
-systemctl enable lightdm
-systemctl enable NetworkManager
-systemctl enable dhcpcd
-
 ### Customize default appearance
 # Current GTK theme/icons is Amy-Dark
 wget https://decibellinux.org/src/xfce4-desktop.xml
