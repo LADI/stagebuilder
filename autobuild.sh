@@ -31,7 +31,8 @@ create_mailmsg(){
         echo -e "Subject: $1" > mail_msg
         echo -e "\n" >> mail_msg
         echo -e "$2" >> mail_msg
-        ssmtp -v $email < mail_msg
+        #ssmtp -v $email < mail_msg
+        msmtp "${email}" < mail_msg
         echo "Mail sent to $email because: $2"
         rm mail_msg
 }
