@@ -15,11 +15,11 @@
 
 set -eo # Stop at first error (o catches piped errors)
 
-distro="decibel Linux"
-email="webmaster@gentoostudio.org"
-arch=amd64
-stage3_suffx="desktop-systemd"
-stage4_name="decibellinux-stage4.tar.bz2"
+distro="LADIOS Linux"
+email="stagebuilder@ladi.internal"
+arch=arm64
+stage3_suffx="openrc"
+stage4_name="ladios-stage4-${arch}.tar.bz2"
 
 url="https://distfiles.gentoo.org/releases/${arch}/autobuilds/"
 txtfile="latest-stage3-${arch}-${stage3_suffx}.txt"
