@@ -145,7 +145,7 @@ mount --make-slave $builddir/stage4/run
 
 cp /etc/resolv.conf $builddir/stage4/etc/
 cp chroot_autobuild.sh $builddir/stage4/ || die "Could not cp chroot_autobuild.sh to chroot."
-cp packages $builddir/stage4/ || die "Could not cp the packages file to chroot."
+#cp packages $builddir/stage4/ || die "Could not cp the packages file to chroot."
 chroot $builddir/stage4 ./chroot_autobuild.sh
 
 ### BINPKGS
@@ -165,7 +165,7 @@ unmount_all
 cd $builddir/stage4
 echo "Packing up stage4... Please be patient."
 rm $builddir/stage4/chroot_autobuild.sh
-rm $builddir/stage4/packages
+#rm $builddir/stage4/packages
 tar -cjf $builddir/${stage4_name} --exclude='/run/*' --exclude='/dev/*' --exclude='/sys/*' --exclude='/proc/*' .
 # Don't forget to move tarball to live server.
 cleanup
