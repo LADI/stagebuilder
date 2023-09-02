@@ -30,6 +30,8 @@ txtfile="latest-stage3-${arch}-${stage3_suffx}.txt"
 builddir="/var/tmp/stagebuilder" # Do not use trailing slash here.
 seedname="stage3seed.tar.xz"
 
+echo "Building ${stage4_name}..."
+
 # Usage: create_mailmsg "Subject" "message_body"
 create_mailmsg(){
         echo -e "Subject: $1" > mail_msg
