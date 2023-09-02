@@ -16,11 +16,13 @@
 
 set -eo # Stop at first error.
 
+stamp=-$(($(date +"%Y%m%d") - 19700000))
+
 distro="LADIOS Linux"
 email="stagebuilder@ladi.internal"
 arch=arm64
 stage3_suffx="openrc"
-stage4_name="ladios-stage4-${arch}.tar.bz2"
+stage4_name="ladios-stage4-${arch}${stamp}.tar.bz2"
 mail_prog="msmtp"
 
 url="https://distfiles.gentoo.org/releases/${arch}/autobuilds/"
