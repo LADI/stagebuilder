@@ -21,6 +21,7 @@ email="webmaster@gentoostudio.org"
 arch=amd64
 stage3_suffx="desktop-systemd"
 stage4_name="decibellinux-stage4.tar.bz2"
+mail_prog="ssmtp -v"
 
 url="https://distfiles.gentoo.org/releases/${arch}/autobuilds/"
 txtfile="latest-stage3-${arch}-${stage3_suffx}.txt"
@@ -32,7 +33,7 @@ create_mailmsg(){
         echo -e "Subject: $1" > mail_msg
         echo -e "\n" >> mail_msg
         echo -e "$2" >> mail_msg
-        ssmtp -v $email < mail_msg
+        $mail_prog $email < mail_msg
         echo "Mail sent to $email because: $2"
         rm mail_msg
 }
