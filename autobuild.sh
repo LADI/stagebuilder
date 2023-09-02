@@ -146,7 +146,7 @@ mount --make-slave $builddir/stage4/run
 cp /etc/resolv.conf $builddir/stage4/etc/
 cp chroot_autobuild.sh $builddir/stage4/ || die "Could not cp chroot_autobuild.sh to chroot."
 #cp packages $builddir/stage4/ || die "Could not cp the packages file to chroot."
-chroot $builddir/stage4 ./chroot_autobuild.sh
+chroot $builddir/stage4 /bin/bash ./chroot_autobuild.sh
 
 ### BINPKGS
 
