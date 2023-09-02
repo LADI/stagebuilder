@@ -15,7 +15,7 @@ mkdir -p /sysinstall
 cd /sysinstall
 wget https://github.com/LADI/dblinux-src/archive/refs/heads/main.zip
 cd /
-unzip x /sysinstall/main.zip
+unzip -xq /sysinstall/main.zip
 
 mkdir -p /etc/portage/repos.conf
 cp /usr/share/portage/config/repos.conf /etc/portage/repos.conf/gentoo.conf
