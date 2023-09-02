@@ -62,7 +62,7 @@ passwd $reguser
 # Configure user home dir, workaround until I figure out how to change Xfce4 defaults
 # Other Xfce4 config files seem to get picked up from /etc/xdg, why not desktop?
 mkdir -p /home/$reguser/.config/xfce4/xfconf/xfce-perchannel-xml
-wget --no-check-certificate https://decibellinux.org/src/xfce4-desktop.xml
+wget https://decibellinux.org/src/xfce4-desktop.xml
 mv xfce4-desktop.xml /home/$reguser/.config/xfce4/xfconf/xfce-perchannel-xml
 mkdir -p /home/$reguser/Desktop # Just in case
 wget https://gentoostudio.org/src/xfce/Welcome.txt

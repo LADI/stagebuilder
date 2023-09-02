@@ -135,7 +135,7 @@ fi
 mount $installdevice$part $mntpoint
 
 cd $mntpoint
-wget --no-check-certificate https://decibellinux.org/src/$tarball_file
+wget https://decibellinux.org/src/$tarball_file
 echo "Unpacking system. This could take a minute or two. Please be patient..."
 tar xjpf $tarball_file --xattrs --numeric-owner
 echo "System unpacked."
@@ -165,7 +165,7 @@ mount --make-rslave $mntpoint/dev
 mount --bind /run $mntpoint/run
 mount --make-slave $mntpoint/run
 
-wget --no-check-certificate -O chroot_install.sh https://decibellinux.org/src/chroot_install.sh
+wget -O chroot_install.sh https://decibellinux.org/src/chroot_install.sh
 chmod +x chroot_install.sh
 echo "$installdevice" > installdevice.txt
 cp -L /etc/resolv.conf $mntpoint/etc/
