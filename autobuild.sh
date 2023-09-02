@@ -67,7 +67,7 @@ exit_gracefully(){
 
 die(){
 	echo "$*" 1>&2
-	umount_all
+	unmount_all
 	cleanup
 	create_mailmsg "Autobuild error" "$*"
 	exit 1
