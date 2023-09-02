@@ -3,6 +3,8 @@
 # set -e is !needed here bec it is called by a script outside chroot that uses set -e already.
 
 builddir="/var/tmp/stagebuilder"
+usepkg="getbinpkg" # Choose between getbinpkg and -getbinpkg. Useful for troubleshooting and rebuilding the binhost.
+exclude_list="virtual/* sys-kernel/*-sources acct-group/* acct-user/* app-eselect/* sys-kernel/*-firmware"
 
 ### PREP BEFORE PKG INSTALLATION
 
@@ -79,19 +81,26 @@ EOF
 
 # package.*
 cd
-wget -r -np -R "index.html*" https://decibellinux.org/src/etc/
+echo "Fetching portage config files (/etc/portage/*)..."
+wget --quiet -r -np -R "index.html*" https://decibellinux.org/src/etc/
 cd decibellinux.org/src/etc/portage
 cp -r * /etc/portage
 cd
 rm -rf decibellinux.org
+echo "Done."
 
-emerge dev-vcs/git # Needed to sync decibel Linux repo
+# buildpkg and usepkg used here to cut down on build time.
+FEATURES="$usepkg" emerge --ask=n --buildpkg --buildpkg-exclude "$exclude_list" dev-vcs/git # Needed to sync decibel Linux repo.
 emaint sync
-emerge --quiet --update --deep --newuse @world
+FEATURES="$usepkg" emerge --ask=n --quiet --update --deep --newuse --buildpkg --buildpkg-exclude "$exclude_list" @world
 eselect news read all # Old news is not relevant to new users
 
 # Install pkgs for decibel Linux, and also build binaries
-emerge --buildpkg --usepkg --buildpkg-exclude "virtual/* sys-kernel/*-sources" \
+# Something is wrong here. Script skips to locales at this point.
+#while read p; do
+#	emerge --ask=n --buildpkg --usepkg --buildpkg-exclude "virtual/* sys-kernel/*-sources" $p
+#done <packages
+FEATURES="$usepkg" emerge --ask=n --buildpkg --buildpkg-exclude "$exclude_list" \
 app-portage/cpuid2cpuflags \
 app-portage/eix \
 app-portage/genlop \
@@ -167,6 +176,8 @@ net-misc/dhcpcd \
 net-misc/networkmanager \
 sys-apps/usbutils \
 sys-boot/grub \
+sys-boot/plymouth \
+sys-kernel/dracut \
 sys-kernel/genkernel \
 sys-kernel/linux-firmware \
 sys-kernel/rt-sources \
@@ -176,9 +187,9 @@ x11-misc/mugshot \
 xfce-base/xfce4-meta \
 xfce-extra/xfce4-whiskermenu-plugin \
 xfce-extra/xfce4-alsa-plugin \
-xfce-base/xfce4-power-manager
+xfce-base/xfce4-power-manager || die "Packages were not merged. Quitting."
 
-# Need code to generate list of default installed apps based on above list.
+# Need code here to generate list of default installed apps based the packages file.
 
 # Config kernel
 # Kernel has to be genkernelled now to generate a .config. Make bzImage only to save time.
@@ -209,12 +220,18 @@ systemctl enable dhcpcd
 
 ### Customize default appearance
 # Current GTK theme/icons is Amy-Dark
-wget https://decibellinux.org/src/xfce4-desktop.xml
-wget https://decibellinux.org/src/xfce4-panel.xml
-wget https://decibellinux.org/src/xsettings.xml
-wget https://decibellinux.org/src/decibelLinux2023.png
-wget https://decibellinux.org/src/Amy-Dark-GTK.tar.gz
-wget https://decibellinux.org/src/Amy-Dark-Icons.tar.gz
+echo "Fetching Xfce4 config files..."
+wget --quiet https://decibellinux.org/src/xfce/xfce4-desktop.xml
+wget --quiet https://decibellinux.org/src/xfce/xfce4-panel.xml
+wget --quiet https://decibellinux.org/src/xfce/xsettings.xml
+wget --quiet https://decibellinux.org/src/img/decibelLinux2023.png
+wget --quiet https://decibellinux.org/src/theme/Amy-Dark-GTK.tar.gz
+wget --quiet https://decibellinux.org/src/theme/Amy-Dark-Icons.tar.gz
+echo "Done."
+echo "Fetching bootsplash files..."
+wget --quiet -r -np -R "index.html*" https://decibellinux.org/src/plymouth/cybernetic/
+echo "Done."
+echo "Moving config files..."
 mv xfce4-desktop.xml /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
 mv xfce4-panel.xml /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
 mv xsettings.xml /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
@@ -223,13 +240,24 @@ tar xzf Amy-Dark-GTK.tar.gz
 mv Amy-Dark-GTK /usr/share/themes
 tar xzf Amy-Dark-Icons.tar.gz
 mv Amy-Dark-Icons /usr/share/icons
+mv decibellinux.org/src/plymouth/cybernetic /usr/share/plymouth/themes/
 rm Amy-Dark-GTK.tar.gz
 rm Amy-Dark-Icons.tar.gz
+echo "Done."
 
 # Enable all locales and allow user to narrow it down if they choose to.
 # Change this to allow user to select locale.
 cp /usr/share/i18n/SUPPORTED /etc/locale.gen
-locale-gen
+locale-gen --quiet
+
+cat > /etc/default/grub <<EOF
+GRUB_DISTRIBUTOR="decibel"
+GRUB_DISABLE_LINUX_PARTUUID=false
+GRUB_DISABLE_OS_PROBER=false
+GRUB_CMDLINE_LINUX_DEFAULT='quiet splash'
+GRUB_GFXMODE=1366x768x24
+GRUB_GFXPAYLOAD_LINUX=keep
+EOF
 
 # This reduces the tarball size by rm'ing !needed files.
 rm -rf /var/cache/distfiles/*

@@ -1,19 +1,20 @@
 #!/bin/bash
 
-# Download a stage3 seed
-# Unpack it
-# Chroot into it
-# chroot_autobuild.sh runs in chroot
-# Make tarball
-# scp tarball to VM's host
-# If build successful, make a backup of seed tarball
+# Procedure:
+# Send start email
+# Download seed
+# Unpack seed
+# Chroot and continue build inside chroot
+# Handle binkpgs produced by emerge
+# Create tarball & clean up
+# Send completion email
 
 ### Command-line arguments (only one can be used at a time)
 # noseed: Do not download and update the seed. Used when something has changed and throws a wrench into catalyst builds. In this case, cp the last known good seed instead.
 
 ### Note that full paths must be used, including to symlinks, so that the cronjob that calls this script (if used) won't fail.
 
-set -eo # Stop at first error (o catches piped errors)
+set -eo # Stop at first error.
 
 distro="decibel Linux"
 email="webmaster@gentoostudio.org"
@@ -38,17 +39,21 @@ create_mailmsg(){
 
 unmount_all(){
 	echo "Unmounting dev, proc, sys, and run..."
-	umount -l $builddir/stage4/dev{/shm,/pts,}
-	umount -l $builddir/stage4/proc
-	umount -l $builddir/stage4/sys
-	umount -l $builddir/stage4/run
+	if [ "$(ls -A $builddir/stage4/dev)" ]; then umount -l $builddir/stage4/dev{/shm,/pts,}; fi
+	if [ "$(ls -A $builddir/stage4/proc)" ]; then umount -l $builddir/stage4/proc; fi
+	if [ "$(ls -A $builddir/stage4/sys)" ]; then umount -l $builddir/stage4/sys; fi
+	if [ "$(ls -A $builddir/stage4/run)" ]; then umount -l $builddir/stage4/run; fi
 	echo "Done."
 }
 
 cleanup(){
-	echo "Emptying stage4 directory..."
-	rm -rf $builddir/stage4/*
-	echo "Cleanup complete."
+        echo "Emptying stage4 directory..."
+        if [ "$(ls -A $builddir/stage4/)" ]; then rm -rf $builddir/stage4/*; fi
+        if [ "$(ls -A $builddir/binpkgs/)" ]; then
+                mv $builddir/binpkgs $builddir/binpkgs_new   
+                rm -rf $builddir/binpkgs/*
+        fi
+        echo "Cleanup complete."
 }
 
 exit_gracefully(){
@@ -59,13 +64,33 @@ exit_gracefully(){
 	echo "Exiting autobuild."
 }
 
+die(){
+	echo "$*" 1>&2
+	umount_all
+	cleanup
+	create_mailmsg "Autobuild error" "$*"
+	exit 1
+}
+
 trap 'exit_gracefully $? $LINENO' ERR
 
-# Notify that build is starting
+if (whiptail --title "Binpkg check" --yesno "Binpkgs will be rebuilt. Did you handle the previous run?" 8 78); then
+	echo "Okay, proceeding with autobuild."
+else
+	echo "Thank you. Exiting autobuild."
+	exit 1;
+fi
+
+# Notify that build is starting.
 start_time=$(date)
 create_mailmsg "Build beginning" "The latest build was started at $start_time."
 
+# Cleanup before beginning build, just in case.
+unmount_all
+cleanup
+
 ### DOWNLOAD SEED
+
 # Get text file describing latest stage3 tarball.
 # -O option circumvents wget creating a new file on every run and gives us a fixed filename to use.
 # The wget -S option is --server-response, which can be grepped.
@@ -105,9 +130,9 @@ fi
 
 mkdir -p $builddir/stage4
 echo "Unpacking seed... Please be patient."
-tar xpf $builddir/$seedname --xattrs-include='*.*' --numeric-owner -C $builddir/stage4 # Verbose to troubleshoot
+tar xpf $builddir/$seedname --xattrs-include='*.*' --numeric-owner -C $builddir/stage4 # Verbose to troubleshoot.
 
-### PART 3: CHROOT
+### CHROOT
 
 mount -t proc /proc $builddir/stage4/proc
 mount --rbind /sys $builddir/stage4/sys
@@ -118,8 +143,11 @@ mount --bind /run $builddir/stage4/run
 mount --make-slave $builddir/stage4/run
 
 cp /etc/resolv.conf $builddir/stage4/etc/
-cp chroot_autobuild.sh $builddir/stage4/
+cp chroot_autobuild.sh $builddir/stage4/ || die "Could not cp chroot_autobuild.sh to chroot."
+cp packages $builddir/stage4/ || die "Could not cp the packages file to chroot."
 chroot $builddir/stage4 ./chroot_autobuild.sh
+
+### BINPKGS
 
 # Mv binpkgs out of stage4. Don't forget to scp to web server on VM host.
 # Need to ls recursively to get pkgs added.
@@ -129,12 +157,16 @@ chroot $builddir/stage4 ./chroot_autobuild.sh
 rm -rf $builddir/binpkgs # Clear out binpkgs from previous build
 mv $builddir/stage4/var/cache/binpkgs/ $builddir/
 
+### CREATE TARBALL & CLEANUP
+
 # Pack up stage4 and empty out stage4 dir.
 unmount_all
 cd $builddir/stage4
 echo "Packing up stage4... Please be patient."
 rm $builddir/stage4/chroot_autobuild.sh
+rm $builddir/stage4/packages
 tar -cjf $builddir/${stage4_name} --exclude='/run/*' --exclude='/dev/*' --exclude='/sys/*' --exclude='/proc/*' .
+# Don't forget to move tarball to live server.
 cleanup
 
 end_time=$(date)
